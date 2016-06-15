@@ -1,51 +1,62 @@
-#include <igl/readOBJ.h>
+#include <igl/readOFF.h>
+//#define IGL_NO_CORK
+//#undef IGL_STATIC_LIBRARY
+#include <igl/copyleft/cgal/mesh_boolean.h>
 #include <igl/viewer/Viewer.h>
 
-Eigen::MatrixXd V;
-Eigen::MatrixXi F;
+#include <Eigen/Core>
+#include <iostream>
+
+Eigen::MatrixXd VA, VB, VC;
+Eigen::MatrixXi FA, FB, FC;
+igl::MeshBooleanType boolean_type(
+	igl::MESH_BOOLEAN_TYPE_UNION);
+
+const char * MESH_BOOLEAN_TYPE_NAMES[] =
+{
+	"Union",
+	"Intersect",
+	"Minus",
+	"XOR",
+	"Resolve",
+};
 
 int main(int argc, char *argv[])
 {
-	// Load a mesh in OFF format
-	igl::readOBJ("../data/bunny.obj", V, F);
+	using namespace Eigen;
+	using namespace std;
 
-	// Plot the mesh
-	igl::viewer::Viewer viewer;
-	viewer.data.set_mesh(V, F);
-	viewer.launch();
+	if (argc != 5)
+	{
+		printf("Usage: inputA.obj inputB.obj inputC.obj boolean_type\n");
+		printf("boolean_type: Union, Intersect, Minus, XOR, Resolve\n");
+		exit(1);
+	}
+
+
+	igl::readOBJ( argv[1], VA, FA);
+	igl::readOBJ( argv[2], VB, FB);
+
+	if (strcmp(argv[4], MESH_BOOLEAN_TYPE_NAMES[0]) == 0)
+		boolean_type = igl::MeshBooleanType(igl::MESH_BOOLEAN_TYPE_UNION);
+	else if (strcmp(argv[4], MESH_BOOLEAN_TYPE_NAMES[1]) == 0)
+		boolean_type = igl::MeshBooleanType(igl::MESH_BOOLEAN_TYPE_INTERSECT);
+	else if (strcmp(argv[4], MESH_BOOLEAN_TYPE_NAMES[2]) == 0)
+		boolean_type = igl::MeshBooleanType(igl::MESH_BOOLEAN_TYPE_MINUS);
+	else if (strcmp(argv[4], MESH_BOOLEAN_TYPE_NAMES[3]) == 0)
+		boolean_type = igl::MeshBooleanType(igl::MESH_BOOLEAN_TYPE_XOR);
+	else if (strcmp(argv[4], MESH_BOOLEAN_TYPE_NAMES[4]) == 0)
+		boolean_type = igl::MeshBooleanType(igl::MESH_BOOLEAN_TYPE_RESOLVE);
+	else {
+		printf("Wrong boolean_type!\n");
+		printf("boolean_type: Union, Intersect, Minus, XOR, Resolve\n");
+		exit(1);
+	}
+
+	igl::copyleft::cgal::mesh_boolean(VA, FA, VB, FB, boolean_type, VC, FC);
+
+	igl::writeOBJ(argv[3], VC, FC);
+	
 }
 
-//#include <iostream>
-//#include <CGAL/Simple_cartesian.h>
-//typedef CGAL::Simple_cartesian<double> Kernel;
-//typedef Kernel::Point_2 Point_2;
-//typedef Kernel::Segment_2 Segment_2;
-//int main()
-//{
-//	Point_2 p(1, 1), q(10, 10);
-//	std::cout << "p = " << p << std::endl;
-//	std::cout << "q = " << q.x() << " " << q.y() << std::endl;
-//	std::cout << "sqdist(p,q) = "
-//		<< CGAL::squared_distance(p, q) << std::endl;
-//
-//	Segment_2 s(p, q);
-//	Point_2 m(5, 9);
-//
-//	std::cout << "m = " << m << std::endl;
-//	std::cout << "sqdist(Segment_2(p,q), m) = "
-//		<< CGAL::squared_distance(s, m) << std::endl;
-//	std::cout << "p, q, and m ";
-//	switch (CGAL::orientation(p, q, m)) {
-//	case CGAL::COLLINEAR:
-//		std::cout << "are collinear\n";
-//		break;
-//	case CGAL::LEFT_TURN:
-//		std::cout << "make a left turn\n";
-//		break;
-//	case CGAL::RIGHT_TURN:
-//		std::cout << "make a right turn\n";
-//		break;
-//	}
-//	std::cout << " midpoint(p,q) = " << CGAL::midpoint(p, q) << std::endl;
-//	return 0;
-//}
+
